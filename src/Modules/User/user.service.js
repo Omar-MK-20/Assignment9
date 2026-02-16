@@ -16,3 +16,16 @@ export async function createUser(bodyData)
 
     return { message: "user created successfully", result };
 }
+
+
+export async function getAllUsers()
+{
+    const result = await UserModel.find();
+
+    if (!result)
+    {
+        throw new ResponseError("no users found", 404, { result });
+    }
+
+    return { message: "success", users: result };
+}
