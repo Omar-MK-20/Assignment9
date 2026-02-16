@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import { decrypt } from "../../util/EncryptData.js";
 import { ResponseError } from "../../util/ResponseError.js";
 
 const UserSchema = new mongoose.Schema({
@@ -15,34 +15,33 @@ const UserSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        set: function (value)
+    },
+    phone: {
+        type: String,
+        required: true,
+        get: function (value)
         {
             try
             {
-                const saltRounds = 12;
-                const hash = bcrypt.hashSync(value, saltRounds);
-                return hash;
+                return decrypt(value);
             }
             catch (error)
             {
-                throw new ResponseError("error hashing user's password", 500, { password: value });
+                throw new ResponseError("error decrypting user's phone", 500, { error });
             }
-        }
-    },
-    phone: {
-        type: Number,
-        required: true,
-        set: function ()
-        {
-            
-        }
+        },
     },
     age: {
         type: Number,
         min: 18,
         max: 60,
     }
+}, {
+    toJSON: { getters: true },
+    toObject: { getters: true }
 });
+
+// UserSchema.post();
 
 
 export const UserModel = mongoose.model("users", UserSchema);
