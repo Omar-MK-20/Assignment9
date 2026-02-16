@@ -9,6 +9,13 @@ userRouter.post("/signup", async (req, res) =>
     res.status(200).json(result);
 });
 
+
+userRouter.post("/login", (req, res) =>
+{
+    
+});
+
+
 userRouter.get("/", async (req, res) =>
 {
     const result = await getAllUsers();
