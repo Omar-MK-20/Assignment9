@@ -1,11 +1,9 @@
 import { UserModel } from "../../DB/Models/user.model.js";
-import { encrypt, hashingPassword } from "../../util/EncryptData.js";
+import { checkToken, compareHashes, encrypt, hashingPassword, tokenGenerator } from "../../util/EncryptData.js";
 import { ResponseError } from "../../util/ResponseError.js";
 
 export async function createUser(bodyData)
 {
-
-    console.log(bodyData);
     const { email } = bodyData;
 
     const existUser = await UserModel.findOne({ email: email });
@@ -15,24 +13,63 @@ export async function createUser(bodyData)
         throw new ResponseError("email already exist", 409, { email });
     }
 
-    bodyData.password = hashingPassword(bodyData.password);
-    console.log(bodyData);
+    bodyData.password = await hashingPassword(bodyData.password);
 
-    bodyData.phone = encrypt(value);
-    console.log(bodyData);
+    bodyData.phone = encrypt(bodyData.phone);
 
-    const result = await UserModel.create(bodyData);
+    const { password, ...result } = (await UserModel.create(bodyData)).toObject();
 
     return { message: "user created successfully", result };
 }
 
 
-// export async function signIn(bodyData)
-// {
-//     const { email, password } = bodyData;
-//     const existUser = UserModel.findOne({ email: email });
+export async function login(bodyData)
+{
+    // const { email, password } = bodyData;
 
-// }
+    const existUser = await UserModel.findOne({ email: bodyData.email }).select('+password');
+
+
+    const isPasswordCorrect = await compareHashes(bodyData.password, existUser.password);
+
+    if (!existUser || !isPasswordCorrect)
+    {
+        throw new ResponseError("invalid email or password", 401, { email: bodyData.email, password: bodyData.password });
+    }
+
+    let { password, ...userData } = existUser.toObject();
+
+    userData.token = tokenGenerator({ name: userData.name, email: userData.email, id: userData.id });
+
+
+    return { message: "login successful", user: userData };
+
+}
+
+
+export async function updateUser(headers, bodyData)
+{
+    const { token } = headers;
+
+    const { payload } = checkToken(token);
+
+    const existUser = await UserModel.findById(payload.id);
+    // console.log(existUser);
+
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { id: payload.id });
+    }
+
+    // console.log(bodyData.email && bodyData.email !== existUser.email);
+    if (bodyData.email && bodyData.email !== existUser.email)
+    {
+        const existEmail = await UserModel.findOne({ email: bodyData.email, _id: { $ne: payload.id } });
+        console.log(existEmail);
+    }
+
+    return { message: "updated" };
+}
 
 
 
