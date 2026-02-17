@@ -1,6 +1,5 @@
 import express from 'express';
 import { SEVER_PORT } from '../config/app.config.js';
-import { ResponseError } from './util/ResponseError.js';
 import { testDBConnection } from './DB/Connection.js';
 import { errorMiddleware } from './util/ErrorMiddleware.js';
 import { notFoundRoute } from './util/NotFoundRoute.js';

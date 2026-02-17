@@ -142,13 +142,13 @@ export function checkToken(token)
         // console.log({ error });
         if (error.name === "TokenExpiredError")
         {
-            throw new ResponseError("token expired, login again", 401, { error });
+            throw new ResponseError(error.message, 401, { error });
         }
         else if (error.name === "JsonWebTokenError")
         {
-            throw new ResponseError("invalid token", 401, { error });
+            throw new ResponseError(error.message, 401, { error });
         }
-        throw new ResponseError("token not active", 401, { error });
+        throw new ResponseError(error.message, 401, { error });
     }
 }
 
