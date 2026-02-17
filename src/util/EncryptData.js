@@ -70,14 +70,14 @@ export function decrypt(data)
 /**
  * 
  * @param {string} password 
- * @returns {string}
+ * @returns {Promise<string>}
  */
-export function hashingPassword(password)
+export async function hashingPassword(password)
 {
     try
     {
         const saltRounds = 12;
-        const hash = bcrypt.hashSync(password, saltRounds);
+        const hash = await bcrypt.hash(password, saltRounds);
         return hash;
     }
     catch (error)
@@ -88,16 +88,38 @@ export function hashingPassword(password)
 
 /**
  * 
- * @param {{id: string, name: string, email: string}} 
+ * @param {string | Buffer} password 
+ * @param {string} hashedPassword 
+ * @returns {Promise<boolean>}
+ */
+export async function compareHashes(password, hashedPassword)
+{
+    try
+    {
+        return await bcrypt.compare(password, hashedPassword);
+    }
+    catch (error)
+    {
+        throw new ResponseError("Password comparison failed", 500, { error });
+    }
+}
+
+// const hashedPassword = await hashingPassword("password");
+
+// console.log(await compareHashes("password", hashedPassword));
+
+/**
+ * 
+ * @param { {id: string, name: string, email: string}} UserData
  * @returns {string} 
  */
-export function tokenGenerator({ id, name, email })
+export function tokenGenerator(UserData)
 {
-    const data = { id, name, email };
+    // const data = { id, name, email };
 
     const expiresIn = "1hr";
 
-    const token = jwt.sign(data, key, { expiresIn: expiresIn });
+    const token = jwt.sign(UserData, key, { expiresIn: expiresIn });
 
     return token;
 }
@@ -117,7 +139,16 @@ export function checkToken(token)
     }
     catch (error)
     {
-        return null;
+        // console.log({ error });
+        if (error.name === "TokenExpiredError")
+        {
+            throw new ResponseError("token expired, login again", 401, { error });
+        }
+        else if (error.name === "JsonWebTokenError")
+        {
+            throw new ResponseError("invalid token", 401, { error });
+        }
+        throw new ResponseError("token not active", 401, { error });
     }
 }
 
