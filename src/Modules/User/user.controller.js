@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createUser, getAllUsers, login, updateUser } from "./user.service.js";
+import { bulkCreate, createUser, deleteUser, getAllUsers, login, updateUser } from "./user.service.js";
 
 export const userRouter = Router();
 
@@ -23,10 +23,25 @@ userRouter.patch("/", async (req, res) =>
     res.status(201).json(result);
 });
 
+userRouter.delete("/", async (req, res) =>
+{
+    const result = await deleteUser(req.headers);
+
+    res.status(200).json(result);
+});
+
 
 userRouter.get("/", async (req, res) =>
 {
     const result = await getAllUsers();
 
     res.status(200).json(result);
+});
+
+
+userRouter.post("/bulk-create", async (req, res) =>
+{
+    const result = await bulkCreate(req.body);
+
+    res.status(201).json(result);
 });

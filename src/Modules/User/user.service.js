@@ -1,5 +1,5 @@
 import { UserModel } from "../../DB/Models/user.model.js";
-import { checkToken, compareHashes, encrypt, hashingPassword, tokenGenerator } from "../../util/EncryptData.js";
+import { checkToken, compareHashes, decrypt, encrypt, hashingPassword, tokenGenerator } from "../../util/EncryptData.js";
 import { ResponseError } from "../../util/ResponseError.js";
 
 export async function createUser(bodyData)
@@ -25,14 +25,14 @@ export async function createUser(bodyData)
 
 export async function login(bodyData)
 {
-    // const { email, password } = bodyData;
-
     const existUser = await UserModel.findOne({ email: bodyData.email }).select('+password');
-
+    if (!existUser)
+    {
+        throw new ResponseError("invalid email or password", 401, { email: bodyData.email, password: bodyData.password });
+    }
 
     const isPasswordCorrect = await compareHashes(bodyData.password, existUser.password);
-
-    if (!existUser || !isPasswordCorrect)
+    if (!isPasswordCorrect)
     {
         throw new ResponseError("invalid email or password", 401, { email: bodyData.email, password: bodyData.password });
     }
@@ -40,7 +40,6 @@ export async function login(bodyData)
     let { password, ...userData } = existUser.toObject();
 
     userData.token = tokenGenerator({ name: userData.name, email: userData.email, id: userData.id });
-
 
     return { message: "login successful", user: userData };
 
@@ -54,23 +53,67 @@ export async function updateUser(headers, bodyData)
     const { payload } = checkToken(token);
 
     const existUser = await UserModel.findById(payload.id);
-    // console.log(existUser);
+    console.log(existUser);
 
     if (!existUser)
     {
         throw new ResponseError("user not found", 404, { id: payload.id });
     }
 
+    const updatedData = [];
+
     // console.log(bodyData.email && bodyData.email !== existUser.email);
     if (bodyData.email && bodyData.email !== existUser.email)
     {
-        const existEmail = await UserModel.findOne({ email: bodyData.email, _id: { $ne: payload.id } });
-        console.log(existEmail);
+        const existEmail = await UserModel.findOne({ email: bodyData.email, _id: { $nin: payload.id } });
+
+        if (existEmail)
+        {
+            throw new ResponseError("email already exist", 409, { email: bodyData.email });
+        }
+        existUser.email = bodyData.email;
+        updatedData.push("email");
     }
 
-    return { message: "updated" };
+    if (bodyData.name && bodyData.name !== existUser.name)
+    {
+        existUser.name = bodyData.name;
+        updatedData.push("name");
+    }
+
+    if (bodyData.phone && bodyData.phone !== existUser.phone)
+    {
+        existUser.phone = encrypt(bodyData.phone);
+        updatedData.push("phone");
+    }
+
+    if (bodyData.age && bodyData.age !== existUser.age)
+    {
+        existUser.age = bodyData.age;
+        updatedData.push("age");
+    }
+
+    await existUser.save();
+
+    return { message: `User ${updatedData.join(", ")} updated successfully`, user: existUser };
 }
 
+
+
+export async function deleteUser(headers)
+{
+    const { token } = headers;
+    const { payload } = checkToken(token);
+
+    const result = await UserModel.deleteOne({ _id: payload.id });
+
+    if (!result.deletedCount)
+    {
+        throw new ResponseError("user not found", 404, { id: payload.id });
+    }
+
+    return { message: "user deleted successfully" };
+}
 
 
 export async function getAllUsers()
@@ -83,4 +126,30 @@ export async function getAllUsers()
     }
 
     return { message: "success", users: result };
+}
+
+export async function bulkCreate(bodyData)
+{
+    const data = [];
+    for (const user of bodyData)
+    {
+        const { email } = user;
+
+        const existUser = await UserModel.findOne({ email: email });
+
+        if (existUser)
+        {
+            throw new ResponseError("email already exist", 409, { email });
+        }
+
+        user.password = await hashingPassword(user.password);
+
+        user.phone = encrypt(user.phone);
+
+        const { password, ...result } = (await UserModel.create(user)).toObject();
+
+        data.push(result);
+    }
+
+    return { message: "success", data };
 }
