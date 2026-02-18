@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { bulkCreate, createUser, deleteUser, getAllUsers, login, updateUser } from "./user.service.js";
+import { bulkCreate, createUser, deleteUser, getAllUsers, getSingleUser, login, updateUser } from "./user.service.js";
 
 export const userRouter = Router();
 
@@ -33,7 +33,15 @@ userRouter.delete("/", async (req, res) =>
 
 userRouter.get("/", async (req, res) =>
 {
-    const result = await getAllUsers();
+    let result;
+    if (req.headers.token)
+    {
+        result = await getSingleUser(req.headers);
+    }
+    else
+    {
+        result = await getAllUsers();
+    }
 
     res.status(200).json(result);
 });

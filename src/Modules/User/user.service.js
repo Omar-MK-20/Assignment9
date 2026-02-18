@@ -1,5 +1,5 @@
 import { UserModel } from "../../DB/Models/user.model.js";
-import { checkToken, compareHashes, decrypt, encrypt, hashingPassword, tokenGenerator } from "../../util/EncryptData.js";
+import { verifyToken, compareHashes, decrypt, encrypt, hashingPassword, tokenGenerator } from "../../util/EncryptData.js";
 import { ResponseError } from "../../util/ResponseError.js";
 
 export async function createUser(bodyData)
@@ -50,7 +50,7 @@ export async function updateUser(headers, bodyData)
 {
     const { token } = headers;
 
-    const { payload } = checkToken(token);
+    const { payload } = verifyToken(token);
 
     const existUser = await UserModel.findById(payload.id);
     console.log(existUser);
@@ -93,9 +93,11 @@ export async function updateUser(headers, bodyData)
         updatedData.push("age");
     }
 
-    await existUser.save();
+    if (updatedData.length) await existUser.save();
 
-    return { message: `User ${updatedData.join(", ")} updated successfully`, user: existUser };
+    return updatedData.length
+        ? { message: `User ${updatedData.join(", ")} updated successfully`, user: existUser }
+        : { message: `Data didn't change`, user: existUser };
 }
 
 
@@ -103,7 +105,7 @@ export async function updateUser(headers, bodyData)
 export async function deleteUser(headers)
 {
     const { token } = headers;
-    const { payload } = checkToken(token);
+    const { payload } = verifyToken(token);
 
     const result = await UserModel.deleteOne({ _id: payload.id });
 
@@ -115,6 +117,20 @@ export async function deleteUser(headers)
     return { message: "user deleted successfully" };
 }
 
+export async function getSingleUser(headers)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+
+    const result = await UserModel.findById(payload.id);
+
+    if (!result)
+    {
+        throw new ResponseError("user not found");
+    }
+
+    return { message: "success", user: result };
+}
 
 export async function getAllUsers()
 {
