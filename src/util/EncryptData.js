@@ -130,7 +130,7 @@ export function tokenGenerator(UserData)
  * @param {string} token The JsonWebToken string
  * @returns {{header: { alg: string, typ: string }, payload: {id: string, name: string, email: string, iat: string, exp: string}, signature: string} | null}
  */
-export function checkToken(token)
+export function verifyToken(token)
 {
     try
     {
