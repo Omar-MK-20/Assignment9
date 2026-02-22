@@ -30,6 +30,24 @@ noteRouter.patch("/all", (req, res) =>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 noteRouter.get("/paginate-sort", async (req, res) =>
 {
 
