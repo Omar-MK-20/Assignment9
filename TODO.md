@@ -110,18 +110,18 @@ The checklist below helps track completed and pending tasks.
 
 ## 📝 Basic CRUD
 
-- [ ] **POST /notes**
-    - [ ] Create note
-    - [ ] Get userId from token
+- [x] **POST /notes**
+    - [x] Create note
+    - [x] Get userId from token
 
-- [ ] **PATCH /notes/:noteId**
-    - [ ] Update note
-    - [ ] Only owner can update
-    - [ ] Return updated note
+- [x] **PATCH /notes/:noteId**
+    - [x] Update note
+    - [x] Only owner can update
+    - [x] Return updated note
 
 - [ ] **PUT /notes/replace/:noteId**
-    - [ ] Replace entire note
-    - [ ] Only owner can replace
+    - [x] Replace entire note
+    - [x] Only owner can replace
 
 - [ ] **DELETE /notes/:noteId**
     - [ ] Delete note
