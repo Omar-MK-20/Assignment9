@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { creteNote, updateNote } from "./note.service.js";
+import { creteNote, replaceNote, updateAllTitles, updateNote } from "./note.service.js";
 
 export const noteRouter = Router();
 
@@ -13,6 +13,15 @@ noteRouter.post("/", async (req, res) =>
 });
 
 
+// 4. Updates title for all notes
+noteRouter.patch("/all", async (req, res) =>
+{
+    const result = await updateAllTitles(req.headers, req.body);
+
+    res.status(200).json(result);
+
+});
+
 // 2. Update single Note
 noteRouter.patch("/:noteId", async (req, res) =>
 {
@@ -22,8 +31,13 @@ noteRouter.patch("/:noteId", async (req, res) =>
 });
 
 
-// 4. Updates title for all notes
-noteRouter.patch("/all", (req, res) =>
+// 3. Replace the entire note document
+
+noteRouter.put("/replace/:noteId", async (req, res) =>
 {
-    
+    const result = await replaceNote(req.headers, req.params, req.body);
+
+    res.status(200).json(result);
 });
+
+

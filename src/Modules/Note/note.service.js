@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { NoteModel } from "../../DB/Models/note.model.js";
 import { UserModel } from "../../DB/Models/user.model.js";
 import { verifyToken } from "../../util/EncryptData.js";
@@ -67,8 +68,10 @@ export async function updateNote(headers, params, bodyData)
 }
 
 
-export async function updateAllTitles(headers, bodyData)
+
+export async function replaceNote(headers, params, bodyData)
 {
+    const { noteId } = params;
     const { token } = headers;
     const { payload } = verifyToken(token);
 
@@ -78,5 +81,57 @@ export async function updateAllTitles(headers, bodyData)
         throw new ResponseError("user not found", 404, { id: payload.id });
     }
 
-    
+    const existNote = await NoteModel.findById(noteId);
+    if (!existNote)
+    {
+        throw new ResponseError("note not found", 404, { id: noteId });
+    }
+
+    if (existUser._id.toString() != existNote.userId.toString())
+    {
+        throw new ResponseError("you are not the owner", 403, { noteId: noteId, userId: payload.id });
+    }
+
+    if (!bodyData.title || !bodyData.content)
+    {
+        throw new ResponseError("title and content are required", 422, { data: bodyData });
+    }
+
+    existNote.title = bodyData.title;
+    existNote.content = bodyData.content;
+    await existNote.save();
+
+    return { message: "note updated", result: existNote };
 }
+
+
+
+export async function updateAllTitles(headers, bodyData)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+
+    console.log({ payload });
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { id: payload.id });
+    }
+
+    if (!bodyData.title)
+    {
+        throw new ResponseError("title is required", 422, { title: bodyData.title });
+    }
+
+
+    const result = await NoteModel.updateMany({ userId: payload.id }, { title: bodyData.title });
+    if (result.matchedCount)
+    {
+        throw new ResponseError("not notes found", 404, { userId: payload.id });
+    }
+
+
+    return { message: "all notes updated", result };
+}
+
+
