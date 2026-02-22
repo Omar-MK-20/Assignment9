@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongoose from "mongoose";
 import { NoteModel } from "../../DB/Models/note.model.js";
 import { UserModel } from "../../DB/Models/user.model.js";
 import { verifyToken } from "../../util/EncryptData.js";
@@ -135,3 +136,24 @@ export async function updateAllTitles(headers, bodyData)
 }
 
 
+
+export async function paginateSort(headers, query)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 0;
+
+    const skipped = (page - 1) * limit;
+
+    const countAllNotes = await NoteModel.find({ userId: payload.id }).countDocuments();
+
+    const filteredNotes = await NoteModel.find({ userId: payload.id }).skip(skipped).limit(limit);
+
+    const pages = Math.ceil(countAllNotes / limit);
+
+    return query.limit
+        ? { message: "success", totalNotes: countAllNotes, totalPages: pages, count: filteredNotes.length, currentPage: page, notes: filteredNotes }
+        : { message: "success", totalNotes: countAllNotes, notes: filteredNotes };
+}
