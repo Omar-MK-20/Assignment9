@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { creteNote, updateNote } from "./note.service.js";
+import { creteNote, paginateSort, updateNote } from "./note.service.js";
 
 export const noteRouter = Router();
 
@@ -25,5 +25,15 @@ noteRouter.patch("/:noteId", async (req, res) =>
 // 4. Updates title for all notes
 noteRouter.patch("/all", (req, res) =>
 {
-    
+
+});
+
+
+
+noteRouter.get("/paginate-sort", async (req, res) =>
+{
+
+    const result = await paginateSort(req.headers, req.query);
+
+    res.status(200).json(result);
 });
