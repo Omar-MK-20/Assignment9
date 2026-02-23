@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import mongoose from "mongoose";
 import { NoteModel } from "../../DB/Models/note.model.js";
 import { UserModel } from "../../DB/Models/user.model.js";
 import { verifyToken } from "../../util/EncryptData.js";
@@ -136,6 +135,36 @@ export async function updateAllTitles(headers, bodyData)
 }
 
 
+export async function deleteNote(headers, params)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+    const { noteId } = params;
+
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { userId: payload.id });
+    }
+
+    const existNote = await NoteModel.findById(noteId);
+    if (!existNote)
+    {
+        throw new ResponseError("note not found", 404, { noteId: noteId });
+    }
+
+    const result = await NoteModel.deleteOne({ _id: existNote.id, userId: existUser.id });
+
+    if (!result.deletedCount)
+    {
+        throw new ResponseError("you are not the owner", 401, { userId: existNote });
+    }
+
+    return { message: "note deleted successfully", result };
+
+
+}
+
 
 export async function paginateSort(headers, query)
 {
@@ -156,4 +185,25 @@ export async function paginateSort(headers, query)
     return query.limit
         ? { message: "success", totalNotes: countAllNotes, totalPages: pages, count: filteredNotes.length, currentPage: page, notes: filteredNotes }
         : { message: "success", totalNotes: countAllNotes, notes: filteredNotes };
+}
+
+
+export async function getSingleNote(headers, params)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+    const { id } = params;
+
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { userId: payload.id });
+    }
+
+    const existNote = await NoteModel.findById(id);
+    if (!existNote)
+    {
+        throw new ResponseError("note not found", 404, { noteId: noteId });
+    }
+
 }

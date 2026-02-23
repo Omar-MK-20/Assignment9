@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { creteNote, replaceNote, updateAllTitles, paginateSort, updateNote } from "./note.service.js";
+import { creteNote, replaceNote, updateAllTitles, paginateSort, updateNote, deleteNote, getSingleNote } from "./note.service.js";
 
 export const noteRouter = Router();
 
@@ -41,11 +41,28 @@ noteRouter.put("/replace/:noteId", async (req, res) =>
 });
 
 
+// 5. Delete a single Note
 
+noteRouter.delete("/:noteId", async (req, res) =>
+{
+    const result = await deleteNote(req.headers, req.params);
+
+    res.status(200).json(result);
+});
+
+
+// 6. Retrieve a paginated list of notes
 noteRouter.get("/paginate-sort", async (req, res) =>
 {
 
     const result = await paginateSort(req.headers, req.query);
+
+    res.status(200).json(result);
+});
+
+noteRouter.get("/:id", async (req, res) =>
+{
+    const result = await getSingleNote(req.headers, req.params);
 
     res.status(200).json(result);
 });
