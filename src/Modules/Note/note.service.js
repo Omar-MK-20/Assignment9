@@ -68,7 +68,6 @@ export async function updateNote(headers, params, bodyData)
 }
 
 
-
 export async function replaceNote(headers, params, bodyData)
 {
     const { noteId } = params;
@@ -157,7 +156,7 @@ export async function deleteNote(headers, params)
 
     if (!result.deletedCount)
     {
-        throw new ResponseError("you are not the owner", 401, { userId: existNote });
+        throw new ResponseError("you are not the owner", 401, { userId: existUser.id });
     }
 
     return { message: "note deleted successfully", result };
@@ -203,7 +202,116 @@ export async function getSingleNote(headers, params)
     const existNote = await NoteModel.findById(id);
     if (!existNote)
     {
-        throw new ResponseError("note not found", 404, { noteId: noteId });
+        throw new ResponseError("note not found", 404, { noteId: id });
     }
 
+    const result = await NoteModel.findOne({ _id: existNote._id, userId: existUser._id });
+    if (!result)
+    {
+        throw new ResponseError("you are not the owner", 401, { userId: payload.id });
+    }
+
+    return { message: "success", note: result };
+
+}
+
+
+export async function getByContent(headers, query)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+    const content = query.content || "";
+
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { userId: payload.id });
+    }
+
+    const notes = await NoteModel.find({ userId: payload.id, content: { $regex: content, $options: "i" } });
+
+    return { message: "success", notes };
+}
+
+
+export async function getWithUser(headers)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { userId: payload.id });
+    }
+
+    const notesWithUser = await NoteModel
+        .find({ userId: payload.id })
+        .select("title")
+        .populate("userId", "-_id email")
+        .lean();
+
+    return { message: "success", notes: notesWithUser };
+}
+
+
+
+
+export async function getWithAggregate(headers, query)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+    const title = query.title || "";
+
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { userId: payload.id });
+    }
+
+    const result = await NoteModel.aggregate([
+        {
+            $match: {
+                userId: new mongoose.Types.ObjectId(payload.id),
+                title: { $regex: title, $options: "i" }
+            }
+        },
+        { $lookup: { from: "users", foreignField: "_id", localField: "userId", as: "user" } },
+        { $unwind: "$user" },
+        {
+            $project: {
+                _id: 0,
+                title: 1,
+                userId: 1,
+                createdAt: 1,
+                "user.name": 1,
+                "user.email": 1
+            }
+        },
+    ])
+        ;
+    return { message: "success", notes: result };
+}
+
+
+
+export async function deleteAllNotes(headers)
+{
+    const { token } = headers;
+    const { payload } = verifyToken(token);
+
+    const existUser = await UserModel.findById(payload.id);
+    if (!existUser)
+    {
+        throw new ResponseError("user not found", 404, { userId: payload.id });
+    }
+
+    const result = await NoteModel.deleteMany({ userId: payload.id });
+
+    if (!result.deletedCount)
+    {
+        throw new ResponseError("no notes found", 404, { userId: payload.id });
+    }
+
+    return { message: "notes deleted successfully", result };
 }
