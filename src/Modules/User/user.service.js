@@ -53,7 +53,6 @@ export async function updateUser(headers, bodyData)
     const { payload } = verifyToken(token);
 
     const existUser = await UserModel.findById(payload.id);
-    console.log(existUser);
 
     if (!existUser)
     {
@@ -62,7 +61,6 @@ export async function updateUser(headers, bodyData)
 
     const updatedData = [];
 
-    // console.log(bodyData.email && bodyData.email !== existUser.email);
     if (bodyData.email && bodyData.email !== existUser.email)
     {
         const existEmail = await UserModel.findOne({ email: bodyData.email, _id: { $nin: payload.id } });
@@ -114,7 +112,7 @@ export async function deleteUser(headers)
         throw new ResponseError("user not found", 404, { id: payload.id });
     }
 
-    return { message: "user deleted successfully" };
+    return { message: "user deleted successfully", result };
 }
 
 export async function getSingleUser(headers)
