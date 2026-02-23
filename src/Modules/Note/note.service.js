@@ -110,7 +110,6 @@ export async function updateAllTitles(headers, bodyData)
     const { token } = headers;
     const { payload } = verifyToken(token);
 
-    console.log({ payload });
     const existUser = await UserModel.findById(payload.id);
     if (!existUser)
     {
@@ -229,6 +228,11 @@ export async function getByContent(headers, query)
     }
 
     const notes = await NoteModel.find({ userId: payload.id, content: { $regex: content, $options: "i" } });
+
+    if (!notes.length)
+    {
+        throw new ResponseError("no note found", 404, { content: content });
+    }
 
     return { message: "success", notes };
 }
