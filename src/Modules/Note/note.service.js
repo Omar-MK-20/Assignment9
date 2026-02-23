@@ -124,7 +124,7 @@ export async function updateAllTitles(headers, bodyData)
 
 
     const result = await NoteModel.updateMany({ userId: payload.id }, { title: bodyData.title });
-    if (result.matchedCount)
+    if (!result.matchedCount)
     {
         throw new ResponseError("not notes found", 404, { userId: payload.id });
     }
@@ -177,7 +177,7 @@ export async function paginateSort(headers, query)
 
     const countAllNotes = await NoteModel.find({ userId: payload.id }).countDocuments();
 
-    const filteredNotes = await NoteModel.find({ userId: payload.id }).skip(skipped).limit(limit);
+    const filteredNotes = await NoteModel.find({ userId: payload.id }).skip(skipped).limit(limit).sort({ createdAt: "desc" });
 
     const pages = Math.ceil(countAllNotes / limit);
 
